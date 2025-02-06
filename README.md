@@ -8,9 +8,6 @@ This project is an AI-powered search engine that combines LLMs, Retrieval-Augmen
 ✅ Interactive UI – Built with Streamlit for easy access.
 ✅ Fast & Scalable – Uses FAISS vector storage for efficient retrieval.
 
-🔗 Live Demo: [Coming Soon]
-📂 GitHub Repository: [Your GitHub Link]
-
 🛠️ Tech Stack
 Category	Technologies Used
 LLM	Groq Llama3-8b-8192, OpenAI GPT
