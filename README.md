@@ -78,7 +78,7 @@ Here are web search results: ...
 5. Create a pull request
 
 ## 📬 Contact
-🔗 **LinkedIn**: [Your Profile](https://linkedin.com/in/your-profile)  
-📧 **Email**: your.email@example.com
+🔗 **LinkedIn**:https://www.linkedin.com/in/fm61/
+📧 **Email**: farazmubeen902@gmail.com
 
 💡 **Let's revolutionize research with AI! 🚀**
