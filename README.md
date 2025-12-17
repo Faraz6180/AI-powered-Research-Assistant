@@ -1,6 +1,6 @@
-Intelligent Research Assistant powered by Groq AI, LangChain, ArXiv, Wikipedia & Web Search
+**Intelligent Research Assistant powered by Groq AI, LangChain, ArXiv, Wikipedia & Web Search
 
-Transform the way you research with AI that searches multiple sources, synthesizes information, and provides instant, accurate answers to your questions.
+Transform the way you research with AI that searches multiple sources, synthesizes information, and provides instant, accurate answers to your questions.**
 
 🎯 Problem Statement
 Researchers, students, and professionals waste hours searching through:
