@@ -1,17 +1,10 @@
 import streamlit as st
 import time
 from langchain_groq import ChatGroq
-from langchain_community.utilities import (
-    ArxivAPIWrapper,
-    WikipediaAPIWrapper
-)
-from langchain_community.tools import (
-    ArxivQueryRun,
-    WikipediaQueryRun,
-    DuckDuckGoSearchRun
-)
+from langchain_community.utilities import ArxivAPIWrapper, WikipediaAPIWrapper
+from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun, DuckDuckGoSearchRun
 from langchain.agents import create_openai_tools_agent, AgentExecutor
-from langchain import hub
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 # =========================
 # PAGE CONFIG
@@ -23,7 +16,7 @@ st.set_page_config(
 )
 
 # =========================
-# SIMPLE PREMIUM CSS
+# PREMIUM CSS
 # =========================
 st.markdown("""
 <style>
@@ -48,6 +41,7 @@ body {
     padding: 1.5rem;
     border-radius: 16px;
     margin-bottom: 1rem;
+    color: #e2e8f0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -57,7 +51,7 @@ body {
 # =========================
 st.markdown('<div class="main-title">🚀 AI Research Copilot</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Ask once. Get verified answers with citations from ArXiv, Wikipedia & Web.</div>',
+    '<div class="subtitle">Multi-Source AI Research Assistant | ArXiv • Wikipedia • Web Search</div>',
     unsafe_allow_html=True
 )
 
@@ -76,6 +70,11 @@ with st.sidebar:
         help="Get free key: https://console.groq.com/keys"
     )
 
+    if not demo_mode and not api_key:
+        st.warning("Enter API key or enable Demo Mode")
+    elif api_key:
+        st.success("API Key configured")
+
     model = st.selectbox(
         "Model",
         ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"],
@@ -83,28 +82,28 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("### 🏆 Why This Wins")
+    st.markdown("### 🏆 Winning Features")
     st.markdown("""
-    - Multi-source verification  
-    - Research-grade answers  
-    - Real citations  
-    - Groq-level speed  
+    - Multi-source verification
+    - Real-time research synthesis
+    - Groq-powered speed
+    - Citation tracking
     """)
     
     st.markdown("---")
-    st.markdown("### 💡 Quick Tests:")
+    st.markdown("### 💡 Try These:")
     
     if st.button("🔬 Quantum Computing", use_container_width=True):
-        st.session_state.example = "What are the latest advancements in quantum computing?"
+        st.session_state.example = "What are the latest breakthroughs in quantum computing?"
     
-    if st.button("🤖 Machine Learning", use_container_width=True):
-        st.session_state.example = "What is machine learning and its applications?"
+    if st.button("🤖 Transformers in NLP", use_container_width=True):
+        st.session_state.example = "How do transformer models work in natural language processing?"
     
-    if st.button("🧬 CRISPR Technology", use_container_width=True):
-        st.session_state.example = "Explain CRISPR gene editing technology"
+    if st.button("🧬 CRISPR Applications", use_container_width=True):
+        st.session_state.example = "What are the latest applications of CRISPR technology?"
     
-    if st.button("🌍 Climate Change", use_container_width=True):
-        st.session_state.example = "What are recent climate change research findings?"
+    if st.button("📊 Deep Learning", use_container_width=True):
+        st.session_state.example = "Explain deep learning and its applications"
 
 # =========================
 # LAYOUT
@@ -112,23 +111,37 @@ with st.sidebar:
 left, right = st.columns([7, 3])
 
 with right:
-    st.markdown('<div class="card"><b>Perfect For</b><br>🎓 Students<br>🔬 Researchers<br>👨‍💻 Developers</div>', unsafe_allow_html=True)
-    st.markdown('<div class="card"><b>Key Advantage</b><br>Not just answers — verified synthesis.</div>', unsafe_allow_html=True)
+    st.markdown('''
+    <div class="card">
+        <b>Perfect For</b><br>
+        🎓 Academic Research<br>
+        🔬 Scientific Papers<br>
+        👨‍💻 Technical Learning
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown('''
+    <div class="card">
+        <b>What Makes This Win</b><br>
+        • 3 sources in parallel<br>
+        • AI synthesis<br>
+        • Verified citations<br>
+        • Lightning fast
+    </div>
+    ''', unsafe_allow_html=True)
     
     if "messages" in st.session_state and len(st.session_state.messages) > 1:
         msg_count = len([m for m in st.session_state.messages if m["role"] == "user"])
-        st.markdown(f'<div class="card"><b>Questions Asked</b><br>📊 {msg_count}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card"><b>Research Queries</b><br>📊 {msg_count}</div>', unsafe_allow_html=True)
 
 # =========================
 # CHAT STATE
 # =========================
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "assistant",
-            "content": "Ask a research question. I'll verify it across multiple sources and cite them."
-        }
-    ]
+    st.session_state.messages = [{
+        "role": "assistant",
+        "content": "👋 I'm your AI Research Copilot. Ask any research question and I'll search ArXiv papers, Wikipedia, and the web to give you a comprehensive, cited answer."
+    }]
 
 # Handle example queries
 if "example" in st.session_state:
@@ -145,7 +158,7 @@ with left:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    user_query = st.chat_input("Ask a research question…", disabled=(not demo_mode and not api_key))
+    user_query = st.chat_input("Ask a research question...", disabled=(not demo_mode and not api_key))
 
 # =========================
 # HANDLE QUERY
@@ -157,192 +170,180 @@ if user_query:
         with st.chat_message("user"):
             st.markdown(user_query)
 
-    # -------------------------
     # DEMO MODE
-    # -------------------------
     if demo_mode:
         with left:
             with st.chat_message("assistant"):
-                with st.spinner("Synthesizing verified sources…"):
+                with st.spinner("Researching across multiple sources..."):
                     time.sleep(2)
 
                 demo_answer = f"""
-### Answer
-Based on your question about **"{user_query[:60]}..."**
+### 📚 Research Summary
 
-Quantum Computing uses **qubits** that leverage superposition and entanglement to perform certain computations exponentially faster than classical computers. Recent breakthroughs include:
+**Query:** {user_query}
 
-- **Error Correction**: New techniques reducing quantum decoherence
-- **Algorithm Development**: Improved quantum algorithms for optimization
-- **Hardware Advances**: Room-temperature quantum processors in development
+Quantum computing leverages quantum mechanical phenomena to process information in fundamentally new ways. Recent developments include:
 
-### Key Applications
-- Cryptography and security
+**Key Breakthroughs:**
+- **Error Correction:** New topological codes reducing decoherence by 40%
+- **Scalability:** IBM's 433-qubit Osprey processor (2024)
+- **Algorithms:** Improved variational quantum eigensolvers for chemistry
+
+**Applications:**
 - Drug discovery and molecular simulation
+- Cryptography and secure communications
 - Financial modeling and optimization
 - Machine learning acceleration
 
-### Sources
-- **[ArXiv]** Preskill, J. (2023). *Quantum Computing in the NISQ era and beyond*
-- **[Wikipedia]** Quantum Computing - Comprehensive overview
-- **[Web]** IBM Quantum Experience - Latest developments (Dec 2024)
+**Challenges:**
+- Maintaining quantum coherence at scale
+- Error rates in quantum gates
+- Cost of cryogenic infrastructure
+
+### 📖 Sources
+
+- **[ArXiv]** Preskill, J. (2023). *Quantum Computing in the NISQ Era*
+- **[Wikipedia]** Quantum Computing - Principles and Applications
+- **[Web]** IBM Quantum Blog - Latest Updates (Dec 2024)
 
 ---
-*Note: Demo mode active. Disable for real-time research with your Groq API key.*
+*Demo Mode: Toggle off and add API key for real-time research*
 """
                 st.markdown(demo_answer)
-
+                st.success("Research complete!")
+                
                 st.download_button(
-                    "📄 Download as Markdown",
+                    "📥 Download Report",
                     demo_answer,
-                    file_name="research_answer.md"
+                    file_name="research_report.md",
+                    mime="text/markdown"
                 )
 
-        st.session_state.messages.append(
-            {"role": "assistant", "content": demo_answer}
-        )
+        st.session_state.messages.append({"role": "assistant", "content": demo_answer})
 
-    # -------------------------
-    # REAL MODE - EXACT METHOD FROM YOUR JUPYTER NOTEBOOK
-    # -------------------------
+    # REAL MODE
     else:
         if not api_key:
             with left:
                 with st.chat_message("assistant"):
-                    st.error("⚠️ Please enter your Groq API key or enable Demo Mode!")
+                    st.error("⚠️ Please enter your Groq API key in the sidebar!")
         else:
             try:
                 with left:
                     with st.chat_message("assistant"):
-                        # Show progress
-                        progress_container = st.container()
+                        # Initialize tools
+                        arxiv = ArxivQueryRun(
+                            api_wrapper=ArxivAPIWrapper(
+                                top_k_results=1,
+                                doc_content_chars_max=1000
+                            )
+                        )
                         
-                        with progress_container:
-                            status = st.status("🔍 Initializing research tools...", expanded=True)
-                            
-                            with status:
-                                st.write("📚 Setting up ArXiv research database...")
-                                
-                                # Initialize tools - EXACTLY like your Jupyter notebook
-                                arxiv_wrapper = ArxivAPIWrapper(
-                                    top_k_results=1,
-                                    doc_content_chars_max=1000
-                                )
-                                arxiv = ArxivQueryRun(api_wrapper=arxiv_wrapper)
-                                
-                                st.write("📖 Connecting to Wikipedia...")
-                                
-                                wiki_wrapper = WikipediaAPIWrapper(
-                                    top_k_results=1,
-                                    doc_content_chars_max=1000
-                                )
-                                wiki = WikipediaQueryRun(api_wrapper=wiki_wrapper)
-                                
-                                st.write("🌐 Enabling web search...")
-                                
-                                search = DuckDuckGoSearchRun(name="Search")
-                                
-                                tools = [wiki, arxiv, search]  # Order matters!
-                                
-                                st.write("🤖 Connecting to Groq AI...")
-                                
-                                # Initialize LLM - EXACTLY like your notebook
-                                llm = ChatGroq(
-                                    groq_api_key=api_key,
-                                    model_name=model,
-                                    streaming=True
-                                )
-                                
-                                st.write("🔗 Loading agent prompt...")
-                                
-                                # Use the EXACT prompt from your notebook that works!
-                                try:
-                                    prompt = hub.pull("hwchase17/openai-functions-agent")
-                                except Exception as e:
-                                    st.warning("Using fallback prompt (hub unavailable)")
-                                    from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-                                    prompt = ChatPromptTemplate.from_messages([
-                                        ("system", "You are a helpful research assistant that provides verified information with citations."),
-                                        MessagesPlaceholder(variable_name="chat_history", optional=True),
-                                        ("human", "{input}"),
-                                        MessagesPlaceholder(variable_name="agent_scratchpad")
-                                    ])
-                                
-                                st.write("⚡ Creating agent...")
-                                
-                                # Create agent - EXACTLY like your notebook
-                                agent = create_openai_tools_agent(llm, tools, prompt)
-                                
-                                # Create executor
-                                agent_executor = AgentExecutor(
-                                    agent=agent,
-                                    tools=tools,
-                                    verbose=True,
-                                    handle_parsing_errors=True,
-                                    max_iterations=10
-                                )
-                                
-                                status.update(label="✅ Ready! Searching sources...", state="running")
+                        wiki = WikipediaQueryRun(
+                            api_wrapper=WikipediaAPIWrapper(
+                                top_k_results=1,
+                                doc_content_chars_max=1000
+                            )
+                        )
                         
-                        # Run the agent
-                        with st.spinner("🔍 Researching across multiple sources..."):
+                        search = DuckDuckGoSearchRun(name="Search")
+                        
+                        tools = [wiki, arxiv, search]
+                        
+                        # Initialize LLM
+                        llm = ChatGroq(
+                            groq_api_key=api_key,
+                            model_name=model,
+                            temperature=0.5,
+                            max_tokens=2000
+                        )
+                        
+                        # Create prompt - NO EMOJIS
+                        prompt = ChatPromptTemplate.from_messages([
+                            ("system", """You are a research assistant that provides comprehensive answers with citations.
+
+When answering:
+1. Use all available tools to gather information
+2. Synthesize findings from multiple sources
+3. Always cite your sources clearly
+4. Format response with:
+   - Clear answer section
+   - Key points or findings
+   - Sources section at the end
+
+Be thorough but concise."""),
+                            MessagesPlaceholder(variable_name="chat_history", optional=True),
+                            ("human", "{input}"),
+                            MessagesPlaceholder(variable_name="agent_scratchpad")
+                        ])
+                        
+                        # Create agent
+                        agent = create_openai_tools_agent(llm, tools, prompt)
+                        agent_executor = AgentExecutor(
+                            agent=agent,
+                            tools=tools,
+                            verbose=False,  # Disable verbose to avoid encoding issues
+                            handle_parsing_errors=True,
+                            max_iterations=8
+                        )
+                        
+                        # Execute with progress
+                        with st.spinner("🔍 Searching ArXiv, Wikipedia, and Web..."):
                             result = agent_executor.invoke({"input": user_query})
                         
-                        # Get the answer
-                        answer = result.get("output", "")
+                        answer = result.get("output", "No response generated")
                         
-                        # Format the answer if it's plain text
-                        if "### Answer" not in answer and "### Sources" not in answer:
+                        # Format if needed
+                        if "Sources" not in answer:
                             formatted_answer = f"""
 ### Answer
+
 {answer}
 
 ### Sources
-Based on the research conducted across:
-- **ArXiv** - Research papers
-- **Wikipedia** - Encyclopedia facts
-- **Web Search** - Latest information
+- ArXiv Research Papers
+- Wikipedia Encyclopedia
+- Web Search Results
 """
                             answer = formatted_answer
                         
-                        # Display
                         st.markdown("---")
                         st.markdown(answer)
                         st.success("✅ Research complete!")
                         
                         st.download_button(
-                            "📄 Download as Markdown",
+                            "📥 Download Report",
                             answer,
-                            file_name="research_answer.md"
+                            file_name="research_report.md",
+                            mime="text/markdown"
                         )
 
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": answer}
-                )
+                st.session_state.messages.append({"role": "assistant", "content": answer})
 
             except Exception as e:
                 error_msg = str(e)
                 
                 with left:
                     with st.chat_message("assistant"):
-                        st.error(f"❌ Error: {error_msg}")
-                        
-                        if "401" in error_msg or "API key" in error_msg or "Unauthorized" in error_msg:
-                            st.warning("💡 Invalid API key. Get a new one from console.groq.com")
-                        elif "rate limit" in error_msg.lower() or "429" in error_msg:
-                            st.warning("💡 Rate limit reached. Wait a moment and try again.")
-                        elif "tool" in error_msg.lower() or "parsing" in error_msg.lower():
-                            st.warning("💡 Agent processing issue. Try rephrasing your question.")
+                        if "401" in error_msg or "Unauthorized" in error_msg:
+                            st.error("❌ Invalid API Key")
+                            st.info("Get a new key from: https://console.groq.com/keys")
+                        elif "429" in error_msg or "rate limit" in error_msg.lower():
+                            st.error("❌ Rate Limit Exceeded")
+                            st.info("Wait 60 seconds and try again")
                         else:
-                            st.info("💡 Try Demo Mode to see how it works, or check your API key.")
-                        
-                        # Show detailed error in expander
-                        with st.expander("🔍 Technical Details"):
-                            st.code(error_msg)
+                            st.error(f"❌ Error: {error_msg}")
+                            st.info("Try Demo Mode to see how it works")
 
 # Footer
 st.markdown("---")
-st.markdown(
-    '<div style="text-align: center; color: #94a3b8;">Made with ❤️ for the Research Community | Powered by Groq AI & LangChain</div>',
-    unsafe_allow_html=True
-)
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("**🔬 Sources**")
+    st.markdown("ArXiv • Wikipedia • Web")
+with col2:
+    st.markdown("**⚡ Powered By**")
+    st.markdown("Groq AI • LangChain")
+with col3:
+    st.markdown("**📊 Features**")
+    st.markdown("Multi-Source • Citations • Fast")
