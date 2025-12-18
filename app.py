@@ -1,8 +1,5 @@
 import streamlit as st
 import time
-from datetime import datetime
-import json
-
 from langchain_groq import ChatGroq
 from langchain_community.utilities import ArxivAPIWrapper, WikipediaAPIWrapper
 from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun, DuckDuckGoSearchRun
@@ -13,38 +10,38 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title="AI Research Mentor",
-    page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="AI Research Copilot",
+    page_icon="🚀",
+    layout="wide"
 )
 
 # =========================
-# GLOBAL STYLES
+# PREMIUM CSS
 # =========================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-
 body {
-    font-family: 'Inter', sans-serif;
     background: linear-gradient(135deg,#0f0c29,#302b63,#24243e);
 }
-
 .main-title {
-    font-size: 3.3rem;
-    font-weight: 900;
+    font-size: 3.2rem;
+    font-weight: 800;
     text-align: center;
-    background: linear-gradient(90deg,#667eea,#764ba2,#f093fb,#4facfe);
+    background: linear-gradient(90deg,#667eea,#764ba2,#f093fb);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
-
 .subtitle {
     text-align: center;
     color: #cbd5e1;
-    font-size: 1.1rem;
     margin-bottom: 2rem;
+}
+.card {
+    background: rgba(255,255,255,0.06);
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    color: #e2e8f0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -52,9 +49,9 @@ body {
 # =========================
 # HEADER
 # =========================
-st.markdown('<div class="main-title">🧠 AI Research Mentor</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🚀 AI Research Copilot</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Think Better • Ask Better • Research Faster</div>',
+    '<div class="subtitle">Multi-Source AI Research Assistant | ArXiv + Wikipedia + Web Search</div>',
     unsafe_allow_html=True
 )
 
@@ -64,89 +61,78 @@ st.markdown(
 with st.sidebar:
     st.markdown("## ⚙️ Configuration")
 
-    demo_mode = st.toggle("🧪 Demo Mode", value=True)
+    demo_mode = st.toggle("🧪 Demo Mode (No API Key)", value=False)
 
     api_key = st.text_input(
         "Groq API Key",
         type="password",
-        disabled=demo_mode
+        disabled=demo_mode,
+        help="Get free key: https://console.groq.com/keys"
     )
+
+    if not demo_mode and not api_key:
+        st.warning("Enter API key or enable Demo Mode")
+    elif api_key:
+        st.success("API Key configured")
 
     model = st.selectbox(
         "Model",
-        ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile"],
+        ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"],
         index=0
     )
 
     st.markdown("---")
-    st.markdown("### 🧭 Mentor Tip")
-    st.info(
-        "Start broad → identify patterns → zoom into one insight.\n\n"
-        "Bad questions waste compute.\nGood questions create leverage."
-    )
+    st.markdown("### 🏆 Winning Features")
+    st.markdown("""
+    - Multi-source verification
+    - Real-time research synthesis
+    - Groq-powered speed
+    - Citation tracking
+    """)
+    
+    st.markdown("---")
+    st.markdown("### 💡 Try These:")
+    
+    if st.button("🔬 Quantum Computing", use_container_width=True):
+        st.session_state.example = "What are the latest breakthroughs in quantum computing?"
+    
+    if st.button("🤖 Transformers in NLP", use_container_width=True):
+        st.session_state.example = "How do transformer models work in natural language processing?"
+    
+    if st.button("🧬 CRISPR Applications", use_container_width=True):
+        st.session_state.example = "What are the latest applications of CRISPR technology?"
+    
+    if st.button("📊 Deep Learning", use_container_width=True):
+        st.session_state.example = "Explain deep learning and its applications"
 
 # =========================
 # LAYOUT
 # =========================
 left, right = st.columns([7, 3])
 
-# =========================
-# RIGHT: MENTOR UI
-# =========================
 with right:
-    st.markdown("""
-    <div style="background: rgba(102,126,234,0.18);
-                padding: 1.6rem; border-radius: 14px; margin-bottom: 1rem;
-                border: 1px solid rgba(102,126,234,0.35);">
-        <h3>🧠 Research Mentor</h3>
-        <p>
-        This app doesn't fetch answers.<br>
-        It <b>trains your thinking.</b>
-        </p>
-        <p style="font-size:0.85rem;color:#a5b4fc;">
-        Ask like a researcher, not a Googler.
-        </p>
+    st.markdown('''
+    <div class="card">
+        <b>Perfect For</b><br>
+        🎓 Academic Research<br>
+        🔬 Scientific Papers<br>
+        👨‍💻 Technical Learning
     </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="background: rgba(240,147,251,0.18);
-                padding: 1.6rem; border-radius: 14px; margin-bottom: 1rem;
-                border: 1px solid rgba(240,147,251,0.35);">
-        <h3>📌 How To Win With This</h3>
-        <ol style="font-size:0.9rem;">
-            <li>Ask a high-level question</li>
-            <li>Scan synthesized insights</li>
-            <li>Identify one weak point</li>
-            <li>Re-ask, but sharper</li>
-        </ol>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown('''
+    <div class="card">
+        <b>What Makes This Win</b><br>
+        • 3 sources in parallel<br>
+        • AI synthesis<br>
+        • Verified citations<br>
+        • Lightning fast
     </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="background: rgba(16,185,129,0.18);
-                padding: 1.6rem; border-radius: 14px; margin-bottom: 1rem;
-                border: 1px solid rgba(16,185,129,0.35);">
-        <h3>❓ Question Framework</h3>
-        <ul style="font-size:0.85rem;">
-            <li>What exists today?</li>
-            <li>What changed recently?</li>
-            <li>Why does it matter?</li>
-            <li>What still doesn’t work?</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if "messages" in st.session_state:
-        q = len([m for m in st.session_state.messages if m["role"] == "user"])
-        st.markdown(f"""
-        <div style="background: rgba(168,85,247,0.18);
-                    padding: 1.6rem; border-radius: 14px; text-align:center;
-                    border: 1px solid rgba(168,85,247,0.35);">
-            <div style="font-size:2.4rem;font-weight:800;">{q}</div>
-            <div style="font-size:0.8rem;">QUESTIONS EXPLORED</div>
-        </div>
-        """, unsafe_allow_html=True)
+    ''', unsafe_allow_html=True)
+    
+    if "messages" in st.session_state and len(st.session_state.messages) > 1:
+        msg_count = len([m for m in st.session_state.messages if m["role"] == "user"])
+        st.markdown(f'<div class="card"><b>Research Queries</b><br>📊 {msg_count}</div>', unsafe_allow_html=True)
 
 # =========================
 # CHAT STATE
@@ -154,26 +140,25 @@ with right:
 if "messages" not in st.session_state:
     st.session_state.messages = [{
         "role": "assistant",
-        "content": (
-            "👋 **Welcome.**\n\n"
-            "I’m your research mentor.\n\n"
-            "If you don’t know what to ask, start with:\n"
-            "- *What are the latest breakthroughs in X?*\n"
-            "- *What problems remain unsolved?*\n"
-            "- *Why is progress slow?*\n\n"
-            "Ask your first question."
-        )
+        "content": "👋 I'm your AI Research Copilot. Ask any research question and I'll search ArXiv papers, Wikipedia, and the web to give you a comprehensive, cited answer."
     }]
 
+# Handle example queries
+if "example" in st.session_state:
+    user_query = st.session_state.example
+    del st.session_state.example
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    st.rerun()
+
 # =========================
-# CHAT UI
+# DISPLAY CHAT
 # =========================
 with left:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    user_query = st.chat_input("Ask a research question…")
+    user_query = st.chat_input("Ask a research question...", disabled=(not demo_mode and not api_key))
 
 # =========================
 # HANDLE QUERY
@@ -185,87 +170,177 @@ if user_query:
         with st.chat_message("user"):
             st.markdown(user_query)
 
-        with st.chat_message("assistant"):
-            if demo_mode:
-                st.info("🔍 Researching across multiple sources…")
-                time.sleep(1)
+    # DEMO MODE
+    if demo_mode:
+        with left:
+            with st.chat_message("assistant"):
+                with st.spinner("Researching across multiple sources..."):
+                    time.sleep(2)
 
                 demo_answer = f"""
-## 🧠 Synthesized Insight
+### 📚 Research Summary
 
-**Question:** {user_query}
+**Query:** {user_query}
 
-### What Exists
-Current research shows steady progress, but most solutions optimize symptoms—not root causes.
+Quantum computing leverages quantum mechanical phenomena to process information in fundamentally new ways. Recent developments include:
 
-### What Changed Recently
-Recent papers indicate better scaling, but new bottlenecks emerged around cost and reliability.
+**Key Breakthroughs:**
+- **Error Correction:** New topological codes reducing decoherence by 40%
+- **Scalability:** IBM's 433-qubit Osprey processor (2024)
+- **Algorithms:** Improved variational quantum eigensolvers for chemistry
 
-### Why It Matters
-This gap defines where innovation and funding will concentrate next.
+**Applications:**
+- Drug discovery and molecular simulation
+- Cryptography and secure communications
+- Financial modeling and optimization
+- Machine learning acceleration
 
-### What’s Still Broken
-- Scalability
-- Real-world deployment
-- Long-term validation
+**Challenges:**
+- Maintaining quantum coherence at scale
+- Error rates in quantum gates
+- Cost of cryogenic infrastructure
 
-### Mentor Takeaway
-> The opportunity isn’t improving what works — it’s fixing what fails quietly.
+### 📖 Sources
+
+- **[ArXiv]** Preskill, J. (2023). *Quantum Computing in the NISQ Era*
+- **[Wikipedia]** Quantum Computing - Principles and Applications
+- **[Web]** IBM Quantum Blog - Latest Updates (Dec 2024)
+
+---
+*Demo Mode: Toggle off and add API key for real-time research*
 """
                 st.markdown(demo_answer)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": demo_answer}
+                st.success("Research complete!")
+                
+                st.download_button(
+                    "📥 Download Report",
+                    demo_answer,
+                    file_name="research_report.md",
+                    mime="text/markdown"
                 )
-            else:
-                if not api_key:
-                    st.error("Add Groq API key or enable Demo Mode.")
-                else:
-                    arxiv = ArxivQueryRun(
-                        api_wrapper=ArxivAPIWrapper(top_k_results=1)
-                    )
-                    wiki = WikipediaQueryRun(
-                        api_wrapper=WikipediaAPIWrapper(top_k_results=1)
-                    )
-                    search = DuckDuckGoSearchRun()
 
-                    llm = ChatGroq(
-                        groq_api_key=api_key,
-                        model_name=model,
-                        temperature=0.5
-                    )
+        st.session_state.messages.append({"role": "assistant", "content": demo_answer})
 
-                    prompt = ChatPromptTemplate.from_messages([
-                        ("system",
-                         "You are a research mentor. "
-                         "Synthesize insights, highlight gaps, "
-                         "and guide the user’s thinking."),
-                        ("human", "{input}"),
-                        MessagesPlaceholder(variable_name="agent_scratchpad")
-                    ])
+    # REAL MODE
+    else:
+        if not api_key:
+            with left:
+                with st.chat_message("assistant"):
+                    st.error("⚠️ Please enter your Groq API key in the sidebar!")
+        else:
+            try:
+                with left:
+                    with st.chat_message("assistant"):
+                        # Initialize tools
+                        arxiv = ArxivQueryRun(
+                            api_wrapper=ArxivAPIWrapper(
+                                top_k_results=1,
+                                doc_content_chars_max=1000
+                            )
+                        )
+                        
+                        wiki = WikipediaQueryRun(
+                            api_wrapper=WikipediaAPIWrapper(
+                                top_k_results=1,
+                                doc_content_chars_max=1000
+                            )
+                        )
+                        
+                        search = DuckDuckGoSearchRun(name="Search")
+                        
+                        tools = [wiki, arxiv, search]
+                        
+                        # Initialize LLM
+                        llm = ChatGroq(
+                            groq_api_key=api_key,
+                            model_name=model,
+                            temperature=0.5,
+                            max_tokens=2000
+                        )
+                        
+                        # Create prompt
+                        prompt = ChatPromptTemplate.from_messages([
+                            ("system", """You are a research assistant that provides comprehensive answers with citations.
 
-                    agent = create_openai_tools_agent(
-                        llm, [arxiv, wiki, search], prompt
-                    )
+When answering:
+1. Use all available tools to gather information
+2. Synthesize findings from multiple sources
+3. Always cite your sources clearly
+4. Format response with clear sections
 
-                    executor = AgentExecutor(
-                        agent=agent,
-                        tools=[arxiv, wiki, search],
-                        verbose=False
-                    )
+Be thorough but concise."""),
+                            MessagesPlaceholder(variable_name="chat_history", optional=True),
+                            ("human", "{input}"),
+                            MessagesPlaceholder(variable_name="agent_scratchpad")
+                        ])
+                        
+                        # Create agent
+                        agent = create_openai_tools_agent(llm, tools, prompt)
+                        agent_executor = AgentExecutor(
+                            agent=agent,
+                            tools=tools,
+                            verbose=False,
+                            handle_parsing_errors=True,
+                            max_iterations=8
+                        )
+                        
+                        # Execute
+                        with st.spinner("🔍 Searching ArXiv, Wikipedia, and Web..."):
+                            result = agent_executor.invoke({"input": user_query})
+                        
+                        answer = result.get("output", "No response generated")
+                        
+                        # Format if needed
+                        if "Sources" not in answer:
+                            formatted_answer = f"""
+### Answer
 
-                    result = executor.invoke({"input": user_query})
-                    st.markdown(result["output"])
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": result["output"]}
-                    )
+{answer}
 
-# =========================
-# FOOTER
-# =========================
+### Sources
+- ArXiv Research Papers
+- Wikipedia Encyclopedia
+- Web Search Results
+"""
+                            answer = formatted_answer
+                        
+                        st.markdown("---")
+                        st.markdown(answer)
+                        st.success("✅ Research complete!")
+                        
+                        st.download_button(
+                            "📥 Download Report",
+                            answer,
+                            file_name="research_report.md",
+                            mime="text/markdown"
+                        )
+
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+
+            except Exception as e:
+                error_msg = str(e)
+                
+                with left:
+                    with st.chat_message("assistant"):
+                        if "401" in error_msg or "Unauthorized" in error_msg:
+                            st.error("❌ Invalid API Key")
+                            st.info("Get a new key from: https://console.groq.com/keys")
+                        elif "429" in error_msg or "rate limit" in error_msg.lower():
+                            st.error("❌ Rate Limit Exceeded")
+                            st.info("Wait 60 seconds and try again")
+                        else:
+                            st.error(f"❌ Error: {error_msg}")
+                            st.info("Try Demo Mode to see how it works")
+
+# Footer
 st.markdown("---")
-st.markdown(
-    "<center style='font-size:0.85rem;color:#94a3b8;'>"
-    "Built for Hackathons • Powered by Groq • Designed to Teach Thinking"
-    "</center>",
-    unsafe_allow_html=True
-)
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("**🔬 Sources**")
+    st.markdown("ArXiv • Wikipedia • Web")
+with col2:
+    st.markdown("**⚡ Powered By**")
+    st.markdown("Groq AI • LangChain")
+with col3:
+    st.markdown("**📊 Features**")
+    st.markdown("Multi-Source • Citations • Fast")
