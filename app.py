@@ -51,7 +51,7 @@ body {
 # =========================
 st.markdown('<div class="main-title">🚀 AI Research Copilot</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Multi-Source AI Research Assistant | ArXiv • Wikipedia • Web Search</div>',
+    '<div class="subtitle">Multi-Source AI Research Assistant | ArXiv + Wikipedia + Web Search</div>',
     unsafe_allow_html=True
 )
 
@@ -258,7 +258,7 @@ Quantum computing leverages quantum mechanical phenomena to process information 
                             max_tokens=2000
                         )
                         
-                        # Create prompt - NO EMOJIS
+                        # Create prompt
                         prompt = ChatPromptTemplate.from_messages([
                             ("system", """You are a research assistant that provides comprehensive answers with citations.
 
@@ -266,10 +266,7 @@ When answering:
 1. Use all available tools to gather information
 2. Synthesize findings from multiple sources
 3. Always cite your sources clearly
-4. Format response with:
-   - Clear answer section
-   - Key points or findings
-   - Sources section at the end
+4. Format response with clear sections
 
 Be thorough but concise."""),
                             MessagesPlaceholder(variable_name="chat_history", optional=True),
@@ -282,12 +279,12 @@ Be thorough but concise."""),
                         agent_executor = AgentExecutor(
                             agent=agent,
                             tools=tools,
-                            verbose=False,  # Disable verbose to avoid encoding issues
+                            verbose=False,
                             handle_parsing_errors=True,
                             max_iterations=8
                         )
                         
-                        # Execute with progress
+                        # Execute
                         with st.spinner("🔍 Searching ArXiv, Wikipedia, and Web..."):
                             result = agent_executor.invoke({"input": user_query})
                         
@@ -347,87 +344,3 @@ with col2:
 with col3:
     st.markdown("**📊 Features**")
     st.markdown("Multi-Source • Citations • Fast")
-```
-
----
-
-## 🏆 WHY THIS IS HACKATHON-WINNING:
-
-### **1. Technical Excellence** ✅
-- **Multi-source intelligence**: Not just one API, but THREE
-- **Groq AI**: Fastest LLM inference available
-- **LangChain agents**: Advanced AI orchestration
-- **Real citations**: Not just answers, but sources
-
-### **2. User Experience** ✅
-- **Beautiful UI**: Professional gradient design
-- **Demo mode**: Works without API key for judges
-- **Fast**: Results in seconds, not minutes
-- **Download feature**: Export research reports
-
-### **3. Real-World Application** ✅
-- **Problem**: Research is time-consuming and scattered
-- **Solution**: One search → Multiple sources → Synthesized answer
-- **Users**: Students, researchers, developers
-- **Market**: Multi-billion dollar research industry
-
-### **4. Business Viability** ✅
-- **Freemium model**: Demo mode → Convert to paid
-- **Low cost**: Groq is extremely cheap
-- **Scalable**: Cloud-native, stateless
-- **Monetization**: API key subscriptions
-
-### **5. Differentiation** ✅
-- **Not ChatGPT**: Multi-source verification
-- **Not Google**: AI synthesis with citations
-- **Not traditional search**: Comprehensive research reports
-- **Unique**: ArXiv + Wikipedia + Web in one query
-
----
-
-## 🎯 HACKATHON PITCH (Use This!):
-
-**30-Second Version:**
-```
-"Research is broken. Students spend HOURS searching ArXiv papers,
-Wikipedia, and Google separately. 
-
-AI Research Copilot solves this. Ask one question, get answers from
-THREE sources—ArXiv papers, Wikipedia facts, and web search—
-synthesized by Groq's lightning-fast AI in seconds.
-
-Built with LangChain agents that intelligently query all sources in
-parallel, then synthesize findings with citations. Perfect for students,
-researchers, and developers.
-
-The key innovation: Multi-source verification with AI synthesis,
-powered by Groq for speed. It's like having a research assistant
-that reads everything and gives you the highlights with sources."
-```
-
-**Demo Script:**
-```
-[Open app - Demo Mode ON]
-
-"Here's a quick demo. I'll ask about quantum computing."
-
-[Type: "What are the latest quantum computing breakthroughs?"]
-
-"Watch—in 2 seconds, it searches ArXiv for papers, Wikipedia for
-facts, and the web for recent news, then synthesizes everything."
-
-[Results appear]
-
-"And there's the answer with citations from all three sources.
-Students can export this as a markdown report."
-
-[Toggle Demo Mode OFF, show API key input]
-
-"In production, users bring their own free Groq API key. No costs
-for us, fully scalable."
-
-[Show example buttons]
-
-"I've even built in quick-test queries for easy demoing."
-
-Thank you!
