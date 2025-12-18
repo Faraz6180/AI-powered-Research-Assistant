@@ -12,6 +12,7 @@ from langchain_community.tools import (
 )
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.prompts import PromptTemplate
+from langchain.callbacks import StreamlitCallbackHandler
 
 # =========================
 # PAGE CONFIG
@@ -67,12 +68,13 @@ st.markdown(
 with st.sidebar:
     st.markdown("## ⚙️ Configuration")
 
-    demo_mode = st.toggle("🧪 Demo Mode (No API Key)", value=True)
+    demo_mode = st.toggle("🧪 Demo Mode (No API Key)", value=False)
 
     api_key = st.text_input(
         "Groq API Key",
         type="password",
-        disabled=demo_mode
+        disabled=demo_mode,
+        help="Get free key: https://console.groq.com/keys"
     )
 
     model = st.selectbox(
@@ -88,6 +90,21 @@ with st.sidebar:
     - Real citations  
     - Groq-level speed  
     """)
+    
+    st.markdown("---")
+    st.markdown("### 💡 Try These:")
+    
+    if st.button("🔬 Quantum Computing", use_container_width=True):
+        st.session_state.example = "What are the latest breakthroughs in quantum computing?"
+    
+    if st.button("🤖 Transformer Models", use_container_width=True):
+        st.session_state.example = "How do transformer models work in NLP?"
+    
+    if st.button("🧬 CRISPR Technology", use_container_width=True):
+        st.session_state.example = "What is CRISPR and its applications?"
+    
+    if st.button("🌍 Climate Solutions", use_container_width=True):
+        st.session_state.example = "What are effective climate change solutions?"
 
 # =========================
 # LAYOUT
@@ -97,6 +114,11 @@ left, right = st.columns([7, 3])
 with right:
     st.markdown('<div class="card"><b>Perfect For</b><br>🎓 Students<br>🔬 Researchers<br>👨‍💻 Developers</div>', unsafe_allow_html=True)
     st.markdown('<div class="card"><b>Key Advantage</b><br>Not just answers — verified synthesis.</div>', unsafe_allow_html=True)
+    
+    # Show stats if messages exist
+    if "messages" in st.session_state and len(st.session_state.messages) > 1:
+        msg_count = len([m for m in st.session_state.messages if m["role"] == "user"])
+        st.markdown(f'<div class="card"><b>Questions Asked</b><br>📊 {msg_count}</div>', unsafe_allow_html=True)
 
 # =========================
 # CHAT STATE
@@ -105,9 +127,16 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Ask a research question. I’ll verify it across multiple sources and cite them."
+            "content": "Ask a research question. I'll verify it across multiple sources and cite them."
         }
     ]
+
+# Handle example button clicks
+if "example" in st.session_state:
+    user_query = st.session_state.example
+    del st.session_state.example
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    st.rerun()
 
 # =========================
 # DISPLAY CHAT
@@ -117,7 +146,7 @@ with left:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    user_query = st.chat_input("Ask a research question…")
+    user_query = st.chat_input("Ask a research question…", disabled=(not demo_mode and not api_key))
 
 # =========================
 # HANDLE QUERY
@@ -136,16 +165,27 @@ if user_query:
         with left:
             with st.chat_message("assistant"):
                 with st.spinner("Synthesizing verified sources…"):
-                    time.sleep(1)
+                    time.sleep(2)
 
-                demo_answer = """
+                demo_answer = f"""
 ### Answer
-Quantum Computing uses qubits that leverage **superposition** and **entanglement** to perform certain computations exponentially faster than classical computers.
+Based on your question about **{user_query[:50]}...**, here's a comprehensive answer:
+
+Quantum Computing represents a paradigm shift in computational power. Unlike classical computers that use bits (0 or 1), quantum computers use **qubits** that can exist in superposition—simultaneously representing both 0 and 1. This property, combined with quantum entanglement, allows quantum computers to solve certain problems exponentially faster than classical systems.
+
+Key applications include:
+- **Cryptography**: Breaking traditional encryption
+- **Drug Discovery**: Simulating molecular interactions
+- **Optimization**: Solving complex logistics problems
+- **Machine Learning**: Processing vast datasets
 
 ### Sources
-- **[ArXiv]** Preskill, *Quantum Computing in the NISQ era*
-- **[Wikipedia]** Quantum Computing
-- **[Web]** IBM Quantum Research
+- **[ArXiv]** Preskill, J. (2018). *Quantum Computing in the NISQ era and beyond*
+- **[Wikipedia]** Quantum Computing - Comprehensive overview
+- **[Web]** IBM Quantum Experience - Latest developments (2024)
+
+---
+*Note: This is demo mode. Toggle it off and add your Groq API key for real-time research.*
 """
                 st.markdown(demo_answer)
 
@@ -160,70 +200,150 @@ Quantum Computing uses qubits that leverage **superposition** and **entanglement
         )
 
     # -------------------------
-    # REAL MODE
+    # REAL MODE WITH FIXED AGENT
     # -------------------------
     else:
-        try:
-            arxiv = ArxivQueryRun(
-                api_wrapper=ArxivAPIWrapper(top_k_results=1)
-            )
-            wiki = WikipediaQueryRun(
-                api_wrapper=WikipediaAPIWrapper(top_k_results=1)
-            )
-            web = DuckDuckGoSearchRun(name="WebSearch")
+        if not api_key:
+            with left:
+                with st.chat_message("assistant"):
+                    st.error("⚠️ Please enter your Groq API key in the sidebar or enable Demo Mode!")
+        else:
+            try:
+                # Initialize tools
+                arxiv = ArxivQueryRun(
+                    api_wrapper=ArxivAPIWrapper(
+                        top_k_results=1,
+                        doc_content_chars_max=1000
+                    )
+                )
+                wiki = WikipediaQueryRun(
+                    api_wrapper=WikipediaAPIWrapper(
+                        top_k_results=1,
+                        doc_content_chars_max=1000
+                    )
+                )
+                web = DuckDuckGoSearchRun(name="WebSearch")
 
-            tools = [arxiv, wiki, web]
+                tools = [arxiv, wiki, web]
 
-            llm = ChatGroq(
-                groq_api_key=api_key,
-                model_name=model,
-                temperature=0.6
-            )
+                # Initialize LLM
+                llm = ChatGroq(
+                    groq_api_key=api_key,
+                    model_name=model,
+                    temperature=0.6,
+                    max_tokens=2000
+                )
 
-            prompt = PromptTemplate.from_template("""
-You are a research assistant.
+                # FIXED PROMPT TEMPLATE - This is the key fix!
+                prompt = PromptTemplate.from_template("""
+You are a research assistant that provides verified, cited answers.
 
-Rules:
-- Always verify information.
-- Always cite sources.
-- Never hallucinate.
-- End with a Sources section.
+You have access to these tools:
+{tools}
 
-Format:
+Tool names: {tool_names}
+
+ALWAYS use tools to verify information. Never rely on memory alone.
+
+Use this format:
+
+Question: the input question
+Thought: think about what sources to check
+Action: the tool to use (must be one of [{tool_names}])
+Action Input: the search query
+Observation: the tool's result
+... (repeat Thought/Action/Observation as needed)
+Thought: I now have verified information
+Final Answer: 
 
 ### Answer
-<clear structured explanation>
+<comprehensive explanation with specific facts from sources>
 
 ### Sources
-- [ArXiv]
-- [Wikipedia]
-- [Web]
+- [ArXiv] <specific paper if found>
+- [Wikipedia] <article title>
+- [Web] <relevant findings>
+
+Begin!
 
 Question: {input}
 {agent_scratchpad}
 """)
 
-            agent = create_react_agent(llm, tools, prompt)
-            executor = AgentExecutor(agent=agent, tools=tools)
+                # Create agent
+                agent = create_react_agent(llm, tools, prompt)
+                executor = AgentExecutor(
+                    agent=agent,
+                    tools=tools,
+                    verbose=True,
+                    handle_parsing_errors=True,
+                    max_iterations=10
+                )
 
-            with left:
-                with st.chat_message("assistant"):
-                    with st.spinner("Researching across sources…"):
-                        result = executor.invoke({"input": user_query})
+                with left:
+                    with st.chat_message("assistant"):
+                        # Create status container for tool usage
+                        status_container = st.status("🔍 Researching across sources...", expanded=True)
+                        
+                        with status_container:
+                            st.write("📚 Checking ArXiv for research papers...")
+                            st.write("📖 Searching Wikipedia for verified facts...")
+                            st.write("🌐 Scanning web for latest information...")
+                            
+                            # Create callback for showing agent's thinking
+                            callback_container = st.container()
+                            st_callback = StreamlitCallbackHandler(
+                                callback_container,
+                                expand_new_thoughts=True
+                            )
+                            
+                            # Run agent with callbacks
+                            result = executor.invoke(
+                                {"input": user_query},
+                                {"callbacks": [st_callback]}
+                            )
+                            
+                            status_container.update(
+                                label="✅ Research complete!",
+                                state="complete"
+                            )
 
-                    answer = result["output"]
-                    st.markdown(answer)
+                        answer = result["output"]
+                        
+                        # Display the answer
+                        st.markdown("---")
+                        st.markdown(answer)
 
-                    st.download_button(
-                        "📄 Download as Markdown",
-                        answer,
-                        file_name="research_answer.md"
-                    )
+                        # Download button
+                        st.download_button(
+                            "📄 Download as Markdown",
+                            answer,
+                            file_name="research_answer.md"
+                        )
 
-            st.session_state.messages.append(
-                {"role": "assistant", "content": answer}
-            )
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": answer}
+                )
 
-        except Exception as e:
-            with left:
-                st.error(f"Error: {e}")
+            except Exception as e:
+                with left:
+                    with st.chat_message("assistant"):
+                        st.error(f"❌ Error: {str(e)}")
+                        
+                        if "401" in str(e) or "API key" in str(e):
+                            st.warning("💡 Your API key might be invalid. Get a new one from console.groq.com")
+                        elif "rate limit" in str(e).lower():
+                            st.warning("💡 Rate limit reached. Wait a moment and try again.")
+                        else:
+                            st.info("💡 Try Demo Mode to see how the app works!")
+                        
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": f"Error: {str(e)}"}
+                        )
+
+# Footer
+st.markdown("---")
+st.markdown(
+    '<div style="text-align: center; color: #94a3b8;">Made with ❤️ for the Research Community | Powered by Groq AI</div>',
+    unsafe_allow_html=True
+)
