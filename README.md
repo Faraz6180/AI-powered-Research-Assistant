@@ -12,7 +12,9 @@ A production-ready AI app that retrieves, synthesizes, and delivers insights fro
 Add your Groq API key and start researching instantly.
 
 🖥️ UI Screenshots
-💬 Chat Interface
+💬 <img width="1339" height="574" alt="image" src="https://github.com/user-attachments/assets/c544476f-c8ab-4740-a082-a0a4da232dbf" />
+<img width="1361" height="546" alt="image" src="https://github.com/user-attachments/assets/962c09fa-3ba4-47cf-912f-cf84edd5fadc" />
+
 4
 Ask questions in natural language
 Get structured, AI-generated answers
