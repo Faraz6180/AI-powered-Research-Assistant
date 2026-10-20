@@ -4,7 +4,7 @@ AI-powered multi-source research engine using Groq, LangChain, ArXiv, Wikipedia,
 
 A production-ready AI app that retrieves, synthesizes, and delivers insights from multiple sources in seconds.
 
-🔗 Live Demo.......
+🔗 Live Demo........
 
 🚀 Try it here:
 👉 https://readmemd-sj7fzc7abyqgxw67pz3qif.streamlit.app/
